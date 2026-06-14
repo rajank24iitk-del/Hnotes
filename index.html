@@ -121,6 +121,11 @@ canvas{display:block;position:absolute;top:0;left:0}
   box-shadow:0 4px 14px rgba(0,0,0,.15);
   -webkit-user-select:text;user-select:text;
 }
+#txt-box:empty:before{
+  content:attr(data-hint);
+  color:#aaa;font-size:14px;font-family:'Noto Sans Devanagari',sans-serif;
+  pointer-events:none;
+}
 
 /* ── BOTTOM BAR ── */
 #bottom{
@@ -334,6 +339,13 @@ canvas{display:block;position:absolute;top:0;left:0}
       <span class="lbl">कलम</span>
     </button>
 
+    <!-- ✍→T CONVERT (draw box → erase → Scribble text box appears) -->
+    <button class="tb" id="tb-convert" onclick="setTool('convert')"
+            title="हस्तलिपि → टाइप: बॉक्स बनाएं">
+      <span style="font-size:15px;font-weight:800;letter-spacing:-1px;line-height:1">✍→T</span>
+      <span class="lbl">बदलें</span>
+    </button>
+
     <!-- ⬜ ERASER -->
     <button class="tb" id="tb-eraser" onclick="setTool('eraser')">
       <svg viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -383,20 +395,6 @@ canvas{display:block;position:absolute;top:0;left:0}
 
     <div class="sep"></div>
 
-    <!-- Line spacing quick-slider (📐 icon + slider + live number) -->
-    <div id="sp-ctrl" title="पंक्ति दूरी">
-      <!-- Ruler icon -->
-      <svg viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;width:18px;height:18px;color:gray">
-        <path d="M21 6H3a1 1 0 00-1 1v10a1 1 0 001 1h18a1 1 0 001-1V7a1 1 0 00-1-1zm-1 10H4V8h2v3h2V8h2v3h2V8h2v3h2V8h2v2h-1v1h1v2z"/>
-      </svg>
-      <input type="range" id="sp-slider" min="10" max="80" value="32" step="0.5"
-             style="width:64px;accent-color:var(--blue)"
-             oninput="quickSpacing(this.value)">
-      <span id="sp-num">32</span>
-    </div>
-
-    <div class="sep"></div>
-
     <!-- Undo / Redo -->
     <button class="tb ico-only" onclick="undo()" title="पूर्ववत">
       <svg viewBox="0 0 24 24" fill="currentColor">
@@ -418,6 +416,18 @@ canvas{display:block;position:absolute;top:0;left:0}
       </svg>
     </button>
 
+    <!-- Line spacing slider — right after page icon, clearly grouped -->
+    <div id="sp-ctrl" title="पंक्ति दूरी" style="display:flex;align-items:center;gap:4px;padding:0 6px;
+         background:rgba(0,122,255,.07);border-radius:10px;margin-left:4px;height:44px">
+      <svg viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0;width:16px;height:16px;color:#007AFF">
+        <path d="M21 6H3a1 1 0 00-1 1v10a1 1 0 001 1h18a1 1 0 001-1V7a1 1 0 00-1-1zm-1 10H4V8h2v3h2V8h2v3h2V8h2v3h2V8h2v2h-1v1h1v2z"/>
+      </svg>
+      <input type="range" id="sp-slider" min="10" max="80" value="32" step="0.5"
+             style="width:72px;accent-color:var(--blue)"
+             oninput="quickSpacing(this.value)">
+      <span id="sp-num" style="font-size:11px;color:#007AFF;font-weight:600;min-width:26px">32</span>
+    </div>
+
   </div><!-- end toolbar -->
 
   <!-- ══ CANVAS ══ -->
@@ -425,6 +435,21 @@ canvas{display:block;position:absolute;top:0;left:0}
     <div id="cv-wrap">
       <canvas id="cv-bg"></canvas>
       <canvas id="cv-draw"></canvas>
+
+      <!-- Dashed selection box for convert tool -->
+      <div id="sel-box" style="position:absolute;display:none;pointer-events:none;z-index:5;
+           border:2.5px dashed #007AFF;background:rgba(0,122,255,0.06);box-sizing:border-box;
+           border-radius:4px;"></div>
+
+      <!-- Convert confirm bar (appears after selection) -->
+      <div id="conv-bar" style="position:absolute;display:none;z-index:20;
+           background:var(--blue);color:#fff;border-radius:10px;
+           padding:8px 14px;font-family:'Noto Sans Devanagari',sans-serif;font-size:14px;
+           box-shadow:0 4px 12px rgba(0,0,0,.25);white-space:nowrap;cursor:pointer"
+           onclick="finaliseConvert()">
+        ✓ यहाँ Scribble करें → टाइप बनेगा
+      </div>
+
       <div id="txt-box" contenteditable="true" lang="hi" dir="ltr"
            spellcheck="false" inputmode="text"></div>
     </div>
@@ -436,8 +461,9 @@ canvas{display:block;position:absolute;top:0;left:0}
     <span id="pg-ind">पृष्ठ 1/1</span>
     <button class="bb" onclick="changePage(1)">▶</button>
 
-    <!-- Text alignment buttons (only visible in text mode) -->
+    <!-- Text mode controls: alignment + voice (only visible in text mode) -->
     <div id="align-group">
+      <!-- Alignment -->
       <button class="bb align-btn on" id="al-l" onclick="setAlign('left')"  title="बायाँ">
         <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M3 4h14v2H3zm0 4h9v2H3zm0 4h14v2H3zm0 4h9v2H3z"/></svg>
       </button>
@@ -446,6 +472,19 @@ canvas{display:block;position:absolute;top:0;left:0}
       </button>
       <button class="bb align-btn" id="al-r" onclick="setAlign('right')"  title="दायाँ">
         <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M3 4h14v2H3zm5 4h9v2H8zm-5 4h14v2H3zm5 4h9v2H8z"/></svg>
+      </button>
+
+      <!-- Separator -->
+      <div style="width:1px;height:24px;background:var(--bdr);flex-shrink:0"></div>
+
+      <!-- Voice button — inserts at cursor inside open text box -->
+      <button class="bb align-btn" id="al-mic" onclick="voiceIntoBox()" title="बोलकर यहाँ लिखें"
+              style="min-width:44px;font-size:18px;gap:3px;display:flex;align-items:center">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+          <path d="M12 15c1.66 0 3-1.34 3-3V6a3 3 0 00-6 0v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 3.06-3.1 5-5.91 5s-5.42-1.94-5.91-5H4c.49 3.78 3.32 6.7 7 7.42V21h2v-1.58c3.68-.72 6.51-3.64 7-7.42h-2.09z"/>
+        </svg>
+        <span style="font-size:11px;font-family:'Noto Sans Devanagari',sans-serif;font-weight:600"
+              id="mic-status">बोलें</span>
       </button>
     </div>
 
@@ -604,13 +643,26 @@ const PG_SIZES = {
   A3:     {w:1123, h:1587},
 };
 
-const TOOL_SZ = {pencil:2, pen:3, eraser:22, text:5};
+const TOOL_SZ = {pencil:2, pen:3, eraser:22, text:5, convert:3};
 
 const SWATCHES = [
   '#000000','#1a1a2e','#c0392b','#e67e22','#f1c40f','#27ae60','#2980b9','#8e44ad',
   '#636e72','#7f8c8d','#ff6b6b','#fd9644','#ffd32a','#0be881','#67e5ff','#dda0dd',
   '#ffffff','#f8f9fa','#d63031','#e17055','#fdcb6e','#00b894','#0984e3','#6c5ce7',
 ];
+
+/* ══════════════════════════════════════════
+   CONVERT TOOL STATE
+══════════════════════════════════════════ */
+const CONV = {
+  active: false,
+  start: null,
+  end: null,
+  region: null,   // {x,y,w,h} in canvas px (DPR-scaled)
+};
+
+const selBox  = document.getElementById('sel-box');
+const convBar = document.getElementById('conv-bar');
 
 /* ══════════════════════════════════════════
    APP STATE
@@ -721,8 +773,21 @@ function pt(e) {
 ══════════════════════════════════════════ */
 function penDown(e) {
   if (A.tool==='text') return;
+
+  /* ── CONVERT TOOL: start selection box ── */
+  if (A.tool==='convert') {
+    if (e.pointerType==='pen') A.hasPen = true;
+    if (A.hasPen && e.pointerType==='touch') return;
+    e.preventDefault();
+    CONV.active = true;
+    CONV.start  = pt(e);
+    CONV.end    = CONV.start;
+    convBar.style.display='none';
+    updateSelBox();
+    return;
+  }
+
   if (e.pointerType==='pen') A.hasPen = true;
-  /* palm rejection: ignore touch if pen was seen this session */
   if (A.hasPen && e.pointerType==='touch') return;
   e.preventDefault();
 
@@ -733,11 +798,19 @@ function penDown(e) {
 }
 
 function penMove(e) {
+  /* ── CONVERT: update selection box ── */
+  if (A.tool==='convert' && CONV.active) {
+    if (A.hasPen && e.pointerType==='touch') return;
+    e.preventDefault();
+    CONV.end = pt(e);
+    updateSelBox();
+    return;
+  }
+
   if (!A.isDrawing || A.tool==='text') return;
   if (A.hasPen && e.pointerType==='touch') return;
   e.preventDefault();
 
-  /* ── KEY FIX: use ALL intermediate points (no skipping) ── */
   const events = (e.getCoalescedEvents && e.getCoalescedEvents()) || [e];
   for (const ev of events) {
     const p = pt(ev);
@@ -745,7 +818,6 @@ function penMove(e) {
     if (A.pts.length < 2) continue;
 
     const prev = A.pts[A.pts.length - 2];
-    /* smooth midpoint bezier */
     const mx = (prev.x + p.x) / 2;
     const my = (prev.y + p.y) / 2;
 
@@ -767,8 +839,82 @@ function penMove(e) {
   }
 }
 
-function penUp() {
+function penUp(e) {
+  /* ── CONVERT: show confirm bar ── */
+  if (A.tool==='convert' && CONV.active) {
+    CONV.active = false;
+    if (e) CONV.end = pt(e);
+
+    const x = Math.min(CONV.start.x, CONV.end.x);
+    const y = Math.min(CONV.start.y, CONV.end.y);
+    const w = Math.abs(CONV.end.x - CONV.start.x);
+    const h = Math.abs(CONV.end.y - CONV.start.y);
+
+    if (w > 20*DPR && h > 10*DPR) {
+      CONV.region = {x, y, w, h};
+      /* show the confirm bar just below the selection */
+      const cssY = (y + h) / DPR + 8;
+      const cssX = x / DPR;
+      convBar.style.left   = cssX + 'px';
+      convBar.style.top    = cssY + 'px';
+      convBar.style.display= 'block';
+    } else {
+      selBox.style.display = 'none';
+    }
+    return;
+  }
+
   A.isDrawing = false; A.pts = []; A.redo = [];
+}
+
+/* Draw the dashed selection rectangle */
+function updateSelBox() {
+  if (!CONV.start) return;
+  const x = Math.min(CONV.start.x, CONV.end.x) / DPR;
+  const y = Math.min(CONV.start.y, CONV.end.y) / DPR;
+  const w = Math.abs(CONV.end.x - CONV.start.x) / DPR;
+  const h = Math.abs(CONV.end.y - CONV.start.y) / DPR;
+  selBox.style.left    = x + 'px';
+  selBox.style.top     = y + 'px';
+  selBox.style.width   = w + 'px';
+  selBox.style.height  = h + 'px';
+  selBox.style.display = 'block';
+}
+
+/* User tapped confirm bar → erase region → show Scribble text box */
+function finaliseConvert() {
+  if (!CONV.region) return;
+  const {x, y, w, h} = CONV.region;
+
+  pushHist();
+
+  /* Erase handwriting in selected area */
+  drX.clearRect(x, y, w, h);
+
+  /* Hide selection UI */
+  selBox.style.display  = 'none';
+  convBar.style.display = 'none';
+
+  /* Place editable text box at exact same CSS position */
+  const cssX = x / DPR;
+  const cssY = y / DPR;
+  const cssW = Math.max(w / DPR, 120);
+  const cssH = Math.max(h / DPR, 36);
+
+  txB.style.left      = cssX + 'px';
+  txB.style.top       = cssY + 'px';
+  txB.style.width     = cssW + 'px';
+  txB.style.minHeight = cssH + 'px';
+  txB.style.fontSize  = Math.max(18, cssH * 0.55) + 'px';
+  txB.style.color     = A.color;
+  txB.innerHTML       = '';
+  txB.style.display   = 'block';
+
+  A.txtPos = {x, y};
+  CONV.region = null;
+
+  /* Focus → iOS keyboard + Scribble activates */
+  setTimeout(() => txB.focus(), 60);
 }
 
 function applyCtx(pressure) {
@@ -814,9 +960,12 @@ function showTxtBox(x, y) {
   A.txtPos = {x, y};
   txB.style.left    = (x/DPR)+'px';
   txB.style.top     = (y/DPR)+'px';
+  txB.style.width   = '';        // reset any convert-set width
+  txB.style.minHeight = '36px';
   txB.style.fontSize= Math.max(16, A.size*4)+'px';
   txB.style.color   = A.color;
   txB.innerHTML     = '';
+  txB.setAttribute('data-hint', 'टाइप करें / Scribble करें / 🎤 बोलें');
   txB.style.display = 'block';
   setTimeout(()=>txB.focus(), 50);
 }
@@ -885,7 +1034,14 @@ function setTool(t) {
   const b=document.getElementById('tb-'+t);
   if(b) b.classList.add('on');
 
-  drC.style.cursor = t==='eraser'?'cell':t==='text'?'text':'crosshair';
+  drC.style.cursor = t==='eraser'?'cell':t==='text'?'text':t==='convert'?'crosshair':'crosshair';
+
+  /* reset convert UI when switching away */
+  if (t !== 'convert') {
+    selBox.style.display  = 'none';
+    convBar.style.display = 'none';
+    CONV.active = false; CONV.region = null;
+  }
 
   /* Show/hide alignment buttons */
   document.getElementById('align-group').classList.toggle('show', t==='text');
@@ -1145,7 +1301,104 @@ function loadSc(src){
 }
 
 /* ══════════════════════════════════════════
-   VOICE
+   VOICE INTO TEXT BOX  (cursor-based)
+   — used from bottom bar mic button when
+     text tool is active & box is open
+══════════════════════════════════════════ */
+let boxSR = null;
+
+function voiceIntoBox() {
+  /* Text box must be open first */
+  if (txB.style.display !== 'block') {
+    // Not open yet — open one at a sensible default spot then listen
+    const x = 70 * DPR;
+    const y = A.ps.spacing * 3 * DPR;
+    showTxtBox(x, y);
+    A.txtPos = {x, y};
+  }
+
+  const Cls = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Cls) { alert('Safari में आवाज़ उपलब्ध है।'); return; }
+
+  /* If already listening, stop */
+  if (boxSR) { boxSR.stop(); return; }
+
+  const micStatus = document.getElementById('mic-status');
+  const micBtn    = document.getElementById('al-mic');
+
+  boxSR = new Cls();
+  boxSR.lang            = 'hi-IN';
+  boxSR.continuous      = false;
+  boxSR.interimResults  = true;
+
+  micStatus.textContent = '⏹';
+  micBtn.style.background = '#FF3B30';
+  micBtn.style.color = '#fff';
+  micBtn.style.borderColor = '#FF3B30';
+
+  let interimSpan = null;
+
+  boxSR.onresult = e => {
+    txB.focus();
+    let interim = '', final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) final += e.results[i][0].transcript;
+      else interim += e.results[i][0].transcript;
+    }
+
+    /* Remove previous interim span if any */
+    if (interimSpan) { interimSpan.remove(); interimSpan = null; }
+
+    /* Insert final text at caret */
+    if (final) {
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount) {
+        const range = sel.getRangeAt(0);
+        range.collapse(false);
+        range.insertNode(document.createTextNode(final));
+        range.collapse(false);
+      } else {
+        txB.textContent += final;
+      }
+    }
+
+    /* Show interim text as grey preview */
+    if (interim) {
+      interimSpan = document.createElement('span');
+      interimSpan.style.color = '#aaa';
+      interimSpan.textContent = interim;
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount) {
+        const range = sel.getRangeAt(0);
+        range.insertNode(interimSpan);
+        range.setStartAfter(interimSpan);
+        range.collapse(true);
+        sel.removeAllRanges(); sel.addRange(range);
+      } else {
+        txB.appendChild(interimSpan);
+      }
+    }
+  };
+
+  boxSR.onerror = e => {
+    if (e.error !== 'no-speech') console.warn('SR error', e.error);
+  };
+
+  boxSR.onend = () => {
+    if (interimSpan) { interimSpan.remove(); interimSpan = null; }
+    boxSR = null;
+    micStatus.textContent = 'बोलें';
+    micBtn.style.background = '';
+    micBtn.style.color = '';
+    micBtn.style.borderColor = '';
+  };
+
+  txB.focus();
+  boxSR.start();
+}
+
+/* ══════════════════════════════════════════
+   VOICE (standalone — toolbar mic button)
 ══════════════════════════════════════════ */
 let SR=null;
 
