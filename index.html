@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<title>हिंदी नोट्स</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="हिंदी नोट्स">
+<meta name="theme-color" content="#007AFF">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700&family=Noto+Serif+Devanagari:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --h-toolbar:56px;
+  --h-bottom:58px;
+  --blue:#007AFF;
+  --bg:#d1d1d6;
+  --surface:#fff;
+  --border:#c6c6c8;
+  --text:#1c1c1e;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --safe-left:env(safe-area-inset-left,0px);
+  --safe-right:env(safe-area-inset-right,0px);
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);
+  font-family:-apple-system,'Noto Sans Devanagari',sans-serif;color:var(--text)}
+
+/* ── APP SHELL ── */
+#app{display:flex;flex-direction:column;height:100dvh;
+  padding-top:var(--safe-top);padding-bottom:var(--safe-bottom)}
+
+/* ── TOOLBAR ── */
+#toolbar{
+  flex:0 0 auto;height:var(--h-toolbar);
+  background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 6px;gap:2px;
+  overflow-x:auto;scrollbar-width:none;
+  padding-left:calc(6px + var(--safe-left));
+  padding-right:calc(6px + var(--safe-right));
+}
+#toolbar::-webkit-scrollbar{display:none}
+
+.tb{
+  flex:0 0 auto;width:44px;height:44px;border:none;background:none;
+  border-radius:10px;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;font-size:20px;color:var(--text);
+  transition:background .12s;touch-action:manipulation;
+}
+.tb:active{background:rgba(0,0,0,.1)}
+.tb.on{background:var(--blue);color:#fff}
+.tb svg{width:22px;height:22px;fill:currentColor;pointer-events:none}
+
+.sep{flex:0 0 1px;height:28px;background:var(--border);margin:0 3px}
+
+#color-dot{
+  flex:0 0 28px;width:28px;height:28px;border-radius:50%;
+  border:2.5px solid var(--border);cursor:pointer;background:#000;
+  touch-action:manipulation;
+}
+#size-wrap{display:flex;align-items:center;gap:4px;padding:0 4px}
+#size-wrap span{font-size:11px;color:gray;min-width:24px;text-align:center}
+#size-slider{width:72px;accent-color:var(--blue)}
+
+/* ── CANVAS AREA ── */
+#canvas-area{
+  flex:1 1 auto;overflow:auto;-webkit-overflow-scrolling:touch;
+  display:flex;align-items:flex-start;justify-content:center;
+  background:var(--bg);padding:10px;
+  padding-left:calc(10px + var(--safe-left));
+  padding-right:calc(10px + var(--safe-right));
+}
+#cv-wrap{position:relative;box-shadow:0 4px 24px rgba(0,0,0,.25);flex:0 0 auto}
+canvas{display:block;position:absolute;top:0;left:0}
+#cv-bg{z-index:1}
+#cv-draw{z-index:2;touch-action:none;cursor:crosshair}
+
+/* text overlay */
+#txt-box{
+  position:absolute;z-index:10;display:none;
+  background:rgba(255,255,255,.96);border:2px solid var(--blue);
+  border-radius:8px;padding:8px 10px;min-width:180px;min-height:36px;
+  font-family:'Noto Serif Devanagari','Noto Sans Devanagari',serif;
+  font-size:22px;outline:none;line-height:1.5;resize:both;overflow:auto;
+  box-shadow:0 4px 14px rgba(0,0,0,.15);
+}
+
+/* ── BOTTOM BAR ── */
+#bottom{
+  flex:0 0 auto;height:var(--h-bottom);
+  background:var(--surface);border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 12px;gap:6px;
+  padding-left:calc(12px + var(--safe-left));
+  padding-right:calc(12px + var(--safe-right));
+}
+.bb{
+  padding:8px 12px;border:1.5px solid var(--border);border-radius:10px;
+  background:var(--surface);color:var(--blue);font-size:14px;
+  cursor:pointer;font-family:'Noto Sans Devanagari',sans-serif;
+  touch-action:manipulation;white-space:nowrap;
+}
+.bb.pri{background:var(--blue);color:#fff;border-color:var(--blue)}
+#pg-ind{font-size:14px;font-weight:600;white-space:nowrap;color:var(--text)}
+
+/* ── MODAL OVERLAY ── */
+.mo{
+  position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;
+  display:none;align-items:flex-end;justify-content:center;
+}
+.mo.show{display:flex}
+.ms{
+  background:var(--surface);border-radius:20px 20px 0 0;
+  padding:20px 20px calc(20px + var(--safe-bottom));
+  width:100%;max-width:580px;max-height:80vh;overflow-y:auto;
+}
+.mt{font-size:17px;font-weight:700;margin-bottom:14px;text-align:center}
+
+/* menu items */
+.mi{
+  display:flex;align-items:center;gap:14px;padding:13px 4px;
+  border-bottom:1px solid var(--border);cursor:pointer;font-size:16px;
+  font-family:'Noto Sans Devanagari',sans-serif;
+}
+.mi:last-child{border:none}
+.mi-ico{font-size:22px;width:28px;text-align:center}
+
+/* form rows */
+.fr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 0;border-bottom:1px solid var(--border);
+}
+.fr:last-child{border:none}
+.fl{font-size:15px}
+.fr input[type=number],.fr input[type=text],.fr select{
+  font-size:15px;padding:6px 8px;border:1px solid var(--border);
+  border-radius:8px;width:130px;
+  font-family:'Noto Sans Devanagari',sans-serif;
+}
+
+/* page type buttons */
+.ptg{display:flex;gap:6px}
+.pt{
+  padding:7px 14px;border:1.5px solid var(--border);border-radius:8px;
+  background:none;cursor:pointer;font-size:14px;
+  font-family:'Noto Sans Devanagari',sans-serif;
+}
+.pt.on{border-color:var(--blue);color:var(--blue);background:rgba(0,122,255,.08)}
+
+/* presets */
+.preset-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.pchip{
+  display:flex;align-items:center;gap:4px;padding:5px 10px;
+  border:1px solid var(--border);border-radius:20px;background:#f2f2f7;
+  cursor:pointer;font-size:13px;font-family:'Noto Sans Devanagari',sans-serif;
+}
+.pchip .dx{color:#e00;margin-left:4px;font-size:15px}
+
+/* color swatches */
+.cs-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:7px;margin-bottom:10px}
+.cs{
+  width:34px;height:34px;border-radius:50%;border:2.5px solid transparent;
+  cursor:pointer;transition:transform .1s;
+}
+.cs.on{border-color:var(--blue);transform:scale(1.2)}
+#cc-inp{width:100%;height:42px;border-radius:10px;border:1px solid var(--border);cursor:pointer;margin-top:6px}
+.op-row{display:flex;align-items:center;gap:10px;margin-top:10px}
+.op-row span{font-size:13px;white-space:nowrap;min-width:32px}
+
+/* voice modal */
+#mic-vis{
+  width:76px;height:76px;border-radius:50%;background:var(--blue);
+  margin:16px auto;display:flex;align-items:center;justify-content:center;
+  font-size:32px;color:#fff;
+}
+#mic-vis.pulse{animation:pulse 1s infinite}
+@keyframes pulse{
+  0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(0,122,255,.4)}
+  50%{transform:scale(1.06);box-shadow:0 0 0 12px rgba(0,122,255,0)}
+}
+#v-text{
+  min-height:56px;padding:10px;border:1px solid var(--border);border-radius:10px;
+  margin:10px 0;font-size:20px;font-family:'Noto Sans Devanagari',serif;text-align:left;
+}
+
+/* action buttons row */
+.act-row{display:flex;gap:8px;margin-top:12px}
+.act-btn{
+  flex:1;padding:12px;border-radius:12px;border:none;cursor:pointer;
+  font-size:15px;font-family:'Noto Sans Devanagari',sans-serif;
+}
+.act-btn.ok{background:var(--blue);color:#fff}
+.act-btn.cancel{background:#f2f2f7;border:1px solid var(--border);color:var(--text)}
+
+/* text confirm overlay */
+#txt-confirm{
+  position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:600;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  gap:12px;padding:20px;
+}
+#txt-confirm.show{display:flex}
+#tc-box{
+  width:100%;max-width:500px;min-height:100px;background:#fff;
+  border-radius:14px;padding:14px;
+  font-family:'Noto Serif Devanagari','Noto Sans Devanagari',serif;
+  font-size:22px;outline:none;border:none;resize:vertical;
+}
+#tc-row{display:flex;gap:10px}
+#tc-row button{
+  padding:11px 22px;border-radius:12px;border:none;font-size:15px;
+  cursor:pointer;font-family:'Noto Sans Devanagari',sans-serif;
+}
+#tc-ok{background:var(--blue);color:#fff}
+#tc-no{background:#f2f2f7;border:1px solid var(--border)}
+
+/* loading */
+#loading{
+  position:fixed;inset:0;background:rgba(255,255,255,.92);z-index:800;
+  display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  font-size:17px;font-family:'Noto Sans Devanagari',sans-serif;
+}
+#loading.show{display:flex}
+.spin{width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--blue);
+  border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* main buttons */
+.big-btn{
+  width:100%;padding:14px;border-radius:12px;background:var(--blue);
+  color:#fff;border:none;cursor:pointer;font-size:16px;
+  font-family:'Noto Sans Devanagari',sans-serif;margin-top:14px;
+}
+.big-btn.grey{background:#f2f2f7;color:var(--text);border:1px solid var(--border)}
+
+/* hide elements */
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── TOOLBAR ── -->
+  <div id="toolbar">
+    <button class="tb" onclick="showMo('mo-menu')" title="मेनू">
+      <svg viewBox="0 0 24 24"><rect y="4" width="24" height="2" rx="1"/><rect y="11" width="24" height="2" rx="1"/><rect y="18" width="24" height="2" rx="1"/></svg>
+    </button>
+    <div class="sep"></div>
+    <!-- Tools -->
+    <button class="tb" id="tb-pencil" onclick="setTool('pencil')" title="पेंसिल">
+      <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+    </button>
+    <button class="tb on" id="tb-pen" onclick="setTool('pen')" title="पेन">
+      <svg viewBox="0 0 24 24"><path d="M6.3 19.9L3 21l1.1-3.3L16.8 5.1a1 1 0 011.4 0l1.7 1.7a1 1 0 010 1.4L6.3 19.9z"/></svg>
+    </button>
+    <button class="tb" id="tb-marker" onclick="setTool('marker')" title="हाईलाइटर">
+      <svg viewBox="0 0 24 24"><path d="M18.5 1.5l4 4-13 13-5.5 1.5 1.5-5.5 13-13zm-12 14l-1 3 3-1 9-9-2-2-9 9z"/></svg>
+    </button>
+    <button class="tb" id="tb-eraser" onclick="setTool('eraser')" title="मिटाएं">
+      <svg viewBox="0 0 24 24"><path d="M15.14 3l5.86 5.86-9 9.14H22v2H6.9L2 15.14l9-12.14h4.14zm-.29 2L6 16l3 3 9-9.14-3.15-4.86z"/></svg>
+    </button>
+    <div class="sep"></div>
+    <!-- Text + Voice -->
+    <button class="tb" id="tb-text" onclick="setTool('text')" title="टेक्स्ट लिखें">
+      <svg viewBox="0 0 24 24"><path d="M5 4v3h5.5v12h3V7H19V4z"/></svg>
+    </button>
+    <button class="tb" id="tb-voice" onclick="openVoice()" title="बोलकर लिखें">
+      <svg viewBox="0 0 24 24"><path d="M12 15c1.66 0 3-1.34 3-3V6c0-1.66-1.34-3-3-3S9 4.34 9 6v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 3.06-3.1 5-5.91 5s-5.42-1.94-5.91-5H4c.49 3.78 3.32 6.7 7 7.42V21h2v-1.58c3.68-.72 6.51-3.64 7-7.42h-2.09z"/></svg>
+    </button>
+    <div class="sep"></div>
+    <!-- Color + Size -->
+    <div id="color-dot" onclick="showMo('mo-color')" title="रंग"></div>
+    <div class="size-wrap" style="display:flex;align-items:center;gap:4px;padding:0 4px">
+      <span id="sz-val" style="font-size:11px;color:gray;min-width:20px;text-align:center">3</span>
+      <input type="range" id="size-slider" min="1" max="24" value="3" step="0.5"
+             style="width:68px;accent-color:var(--blue)" oninput="onSizeChange(this.value)">
+    </div>
+    <div class="sep"></div>
+    <!-- Undo / Redo -->
+    <button class="tb" onclick="undo()" title="पूर्ववत (Cmd+Z)">
+      <svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05 1-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
+    </button>
+    <button class="tb" onclick="redo()" title="फिर से (Cmd+Shift+Z)">
+      <svg viewBox="0 0 24 24"><path d="M18.4 10.6C16.55 9 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 15.7C5 12.5 7.95 10.18 11.5 10.18c1.96 0 3.73.72 5.12 1.88L13 15.5h9V6.5l-3.6 4.1z"/></svg>
+    </button>
+    <div class="sep"></div>
+    <!-- Page settings -->
+    <button class="tb" onclick="showMo('mo-page')" title="पृष्ठ सेटिंग">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm4 18H6V4h7v5h5v11zM8 15h8v1H8zm0-3h8v1H8zm0-3h5v1H8z"/></svg>
+    </button>
+  </div>
+
+  <!-- ── CANVAS ── -->
+  <div id="canvas-area">
+    <div id="cv-wrap">
+      <canvas id="cv-bg"></canvas>
+      <canvas id="cv-draw"></canvas>
+      <div id="txt-box" contenteditable="true" lang="hi" dir="ltr"
+           spellcheck="false" inputmode="text"></div>
+    </div>
+  </div>
+
+  <!-- ── BOTTOM BAR ── -->
+  <div id="bottom">
+    <button class="bb" onclick="changePage(-1)">◀</button>
+    <span id="pg-ind">पृष्ठ 1/1</span>
+    <button class="bb" onclick="changePage(1)">▶</button>
+    <button class="bb" onclick="addPage()">+ पृष्ठ</button>
+    <button class="bb pri" onclick="exportPDF()">PDF ↓</button>
+  </div>
+</div>
+
+<!-- ══ MODALS ══ -->
+
+<!-- Menu -->
+<div class="mo" id="mo-menu" onclick="hideMo('mo-menu')">
+  <div class="ms" onclick="event.stopPropagation()">
+    <div class="mt">मेनू</div>
+    <div class="mi" onclick="newDoc()"><span class="mi-ico">📄</span>नया दस्तावेज़</div>
+    <div class="mi" onclick="saveProject()"><span class="mi-ico">💾</span>प्रोजेक्ट सहेजें</div>
+    <div class="mi" onclick="triggerLoad('inp-proj')"><span class="mi-ico">📂</span>प्रोजेक्ट खोलें</div>
+    <div class="mi" onclick="triggerLoad('inp-pdf')"><span class="mi-ico">📑</span>PDF खोलें (संशोधित करें)</div>
+    <div class="mi" onclick="exportPDF();hideMo('mo-menu')"><span class="mi-ico">📤</span>PDF के रूप में सहेजें</div>
+    <div class="mi" onclick="exportImg();hideMo('mo-menu')"><span class="mi-ico">🖼️</span>छवि सहेजें (वर्तमान पृष्ठ)</div>
+    <div class="mi" onclick="clearPage();hideMo('mo-menu')"><span class="mi-ico">🗑️</span>पृष्ठ साफ़ करें</div>
+    <div class="mi" onclick="hideMo('mo-menu')"><span class="mi-ico">✕</span>बंद करें</div>
+  </div>
+</div>
+
+<!-- Page Settings -->
+<div class="mo" id="mo-page" onclick="hideMo('mo-page')">
+  <div class="ms" onclick="event.stopPropagation()">
+    <div class="mt">पृष्ठ सेटिंग</div>
+    <div class="fr">
+      <span class="fl">पृष्ठ का प्रकार</span>
+      <div class="ptg">
+        <button class="pt" id="pt-plain" onclick="setPT('plain')">सादा</button>
+        <button class="pt on" id="pt-ruled" onclick="setPT('ruled')">लाइन</button>
+        <button class="pt" id="pt-graph" onclick="setPT('graph')">ग्राफ</button>
+      </div>
+    </div>
+    <div class="fr" id="sp-row">
+      <span class="fl">पंक्ति दूरी (px)</span>
+      <input type="number" id="inp-sp" value="32" min="8" max="120" step="0.5"
+             style="width:100px">
+    </div>
+    <div class="fr">
+      <span class="fl">पृष्ठ आकार</span>
+      <select id="inp-pgsz">
+        <option value="A4">A4</option>
+        <option value="Letter">Letter</option>
+        <option value="A5">A5</option>
+        <option value="A3">A3</option>
+      </select>
+    </div>
+    <div class="fr">
+      <span class="fl">पंक्ति रंग</span>
+      <input type="color" id="inp-lc" value="#b8cce4"
+             style="width:60px;height:36px;border-radius:8px;border:1px solid var(--border);cursor:pointer">
+    </div>
+    <div class="fr">
+      <span class="fl">पृष्ठभूमि रंग</span>
+      <input type="color" id="inp-bg" value="#ffffff"
+             style="width:60px;height:36px;border-radius:8px;border:1px solid var(--border);cursor:pointer">
+    </div>
+    <div class="fr" style="flex-direction:column;align-items:flex-start;gap:8px">
+      <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
+        <span class="fl">सहेजे गए प्रीसेट</span>
+        <button onclick="savePreset()"
+          style="padding:5px 12px;border-radius:8px;background:var(--blue);color:#fff;border:none;cursor:pointer;font-size:13px;font-family:'Noto Sans Devanagari',sans-serif">
+          ✚ सहेजें</button>
+      </div>
+      <div class="preset-list" id="preset-list"></div>
+    </div>
+    <button class="big-btn" onclick="applyPS()">लागू करें ✓</button>
+    <button class="big-btn grey" onclick="hideMo('mo-page')">बंद करें</button>
+  </div>
+</div>
+
+<!-- Color Picker -->
+<div class="mo" id="mo-color" onclick="hideMo('mo-color')">
+  <div class="ms" onclick="event.stopPropagation()">
+    <div class="mt">रंग चुनें</div>
+    <div class="cs-grid" id="swatch-grid"></div>
+    <div style="margin-top:4px">
+      <div style="font-size:13px;color:gray;margin-bottom:4px">कस्टम रंग</div>
+      <input type="color" id="cc-inp"
+             style="width:100%;height:42px;border-radius:10px;border:1px solid var(--border);cursor:pointer"
+             oninput="setColor(this.value)">
+    </div>
+    <div class="op-row">
+      <span style="font-size:13px">पारदर्शिता</span>
+      <input type="range" id="op-slider" min="0.05" max="1" step="0.05" value="1"
+             style="flex:1;accent-color:var(--blue)" oninput="A.opacity=+this.value;document.getElementById('op-val').textContent=Math.round(A.opacity*100)+'%'">
+      <span id="op-val" style="font-size:13px;min-width:34px">100%</span>
+    </div>
+    <button class="big-btn" onclick="hideMo('mo-color')">ठीक है</button>
+  </div>
+</div>
+
+<!-- Voice Input -->
+<div class="mo" id="mo-voice" onclick="stopVoice()">
+  <div class="ms" onclick="event.stopPropagation()" style="text-align:center">
+    <div class="mt">🎤 बोलकर लिखें (हिंदी)</div>
+    <div id="mic-vis">🎤</div>
+    <div style="font-size:13px;color:gray;margin-bottom:4px">
+      Apple Pencil से लिखने के लिए — बोलें या नीचे टाइप करें
+    </div>
+    <div id="v-text">यहाँ आपकी आवाज़ दिखाई देगी...</div>
+    <div class="act-row">
+      <button class="act-btn ok" onclick="confirmVoice()">पृष्ठ पर जोड़ें ✓</button>
+      <button class="act-btn cancel" onclick="stopVoice()">रद्द करें ✕</button>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:gray">
+      💡 Scribble से हिंदी लिखने के लिए पहले Text (T) मोड चुनें
+    </div>
+  </div>
+</div>
+
+<!-- Text place confirm -->
+<div id="txt-confirm">
+  <textarea id="tc-box" lang="hi" dir="ltr" placeholder="यहाँ संपादित करें..."></textarea>
+  <div id="tc-row">
+    <button id="tc-ok" onclick="commitTCBox()">पृष्ठ पर जोड़ें ✓</button>
+    <button id="tc-no" onclick="document.getElementById('txt-confirm').classList.remove('show')">रद्द करें ✕</button>
+  </div>
+</div>
+
+<!-- Loading -->
+<div id="loading">
+  <div class="spin"></div>
+  <div id="load-txt">लोड हो रहा है...</div>
+</div>
+
+<!-- Hidden file inputs -->
+<input type="file" id="inp-proj" accept=".hnotes,.json" style="display:none" onchange="loadProject(this)">
+<input type="file" id="inp-pdf" accept=".pdf" style="display:none" onchange="loadPDF(this)">
+
+<!-- libs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+/* ════════════════════════════════════════════
+   CONSTANTS
+════════════════════════════════════════════ */
+const DPR = window.devicePixelRatio || 2;
+
+const PG_SIZES = {
+  A4:     {w:794,  h:1123},
+  Letter: {w:816,  h:1056},
+  A5:     {w:559,  h:794 },
+  A3:     {w:1123, h:1587},
+};
+
+const TOOL_SZ = {pencil:2, pen:3, marker:10, eraser:22, text:5};
+
+const SWATCHES = [
+  '#000000','#1a1a2e','#c0392b','#e67e22','#f1c40f','#27ae60','#2980b9','#8e44ad',
+  '#636e72','#7f8c8d','#ff6b6b','#fd9644','#ffd32a','#0be881','#67e5ff','#dda0dd',
+  '#ffffff','#f8f9fa','#d63031','#e17055','#fdcb6e','#00b894','#0984e3','#6c5ce7',
+];
+
+/* ════════════════════════════════════════════
+   APP STATE
+════════════════════════════════════════════ */
+const A = {
+  tool: 'pen',
+  color: '#000000',
+  size: 3,
+  opacity: 1,
+  ps: {               // page settings
+    type: 'ruled',
+    spacing: 32,
+    lineColor: '#b8cce4',
+    marginColor: '#f4a0a0',
+    bgColor: '#ffffff',
+    size: 'A4',
+  },
+  pages:   [],        // user drawings (dataURL or null)
+  bgPages: [],        // PDF backgrounds (dataURL or null)
+  cur: 0,
+  isDrawing: false,
+  pts: [],
+  history: [],
+  redo: [],
+  hasPen: false,      // Apple Pencil detected this session
+  voiceText: '',
+  txtPos: {x:0,y:0},
+  presets: JSON.parse(localStorage.getItem('ps-presets')||'[]'),
+};
+
+/* ════════════════════════════════════════════
+   CANVAS REFS
+════════════════════════════════════════════ */
+const bgC  = document.getElementById('cv-bg');
+const drC  = document.getElementById('cv-draw');
+const bgX  = bgC.getContext('2d');
+const drX  = drC.getContext('2d');
+const wrap = document.getElementById('cv-wrap');
+const txB  = document.getElementById('txt-box');
+
+/* ════════════════════════════════════════════
+   INIT CANVAS
+════════════════════════════════════════════ */
+function initCanvas() {
+  const {w,h} = PG_SIZES[A.ps.size] || PG_SIZES.A4;
+  wrap.style.width  = w+'px';
+  wrap.style.height = h+'px';
+  [bgC,drC].forEach(c=>{
+    c.style.width  = w+'px';
+    c.style.height = h+'px';
+    c.width  = w*DPR;
+    c.height = h*DPR;
+  });
+  drawBG();
+}
+
+/* ════════════════════════════════════════════
+   DRAW BACKGROUND
+════════════════════════════════════════════ */
+function drawBG(pageIdx) {
+  const idx = pageIdx !== undefined ? pageIdx : A.cur;
+  const bg = A.bgPages[idx];
+  const W = bgC.width, H = bgC.height;
+
+  bgX.clearRect(0,0,W,H);
+  bgX.fillStyle = A.ps.bgColor||'#ffffff';
+  bgX.fillRect(0,0,W,H);
+
+  if (bg) {
+    // PDF background
+    const img = new Image();
+    img.onload = ()=>{ bgX.drawImage(img,0,0,W,H); };
+    img.src = bg;
+    return;
+  }
+
+  const sp = A.ps.spacing * DPR;
+
+  if (A.ps.type === 'ruled') {
+    // margin
+    bgX.strokeStyle = A.ps.marginColor||'#f4a0a0';
+    bgX.lineWidth = 1.5*DPR;
+    bgX.beginPath();
+    const mx = 58*DPR;
+    bgX.moveTo(mx,0); bgX.lineTo(mx,H);
+    bgX.stroke();
+    // lines
+    bgX.strokeStyle = A.ps.lineColor||'#b8cce4';
+    bgX.lineWidth = 1*DPR;
+    for (let y=sp; y<H; y+=sp) {
+      bgX.beginPath(); bgX.moveTo(0,y); bgX.lineTo(W,y); bgX.stroke();
+    }
+  } else if (A.ps.type === 'graph') {
+    bgX.strokeStyle = A.ps.lineColor||'#b8cce4';
+    bgX.lineWidth = 1*DPR;
+    for (let x=sp; x<W; x+=sp) {
+      bgX.beginPath(); bgX.moveTo(x,0); bgX.lineTo(x,H); bgX.stroke();
+    }
+    for (let y=sp; y<H; y+=sp) {
+      bgX.beginPath(); bgX.moveTo(0,y); bgX.lineTo(W,y); bgX.stroke();
+    }
+  }
+}
+
+/* ════════════════════════════════════════════
+   COORDINATE MAPPING  (no offset drift)
+════════════════════════════════════════════ */
+function pt(e) {
+  const r = drC.getBoundingClientRect();
+  return {
+    x: (e.clientX - r.left)  * DPR,
+    y: (e.clientY - r.top)   * DPR,
+    p: (e.pressure > 0) ? e.pressure : 0.5,
+  };
+}
+
+/* ════════════════════════════════════════════
+   DRAWING
+════════════════════════════════════════════ */
+function penDown(e) {
+  if (A.tool === 'text') return;
+  if (e.pointerType === 'pen') A.hasPen = true;
+  if (A.hasPen && e.pointerType === 'touch') return; // palm rejection
+  e.preventDefault();
+
+  const p = pt(e);
+  A.isDrawing = true;
+  A.pts = [p];
+  pushHist();
+
+  drX.save(); applyCtx(p.p); drX.beginPath(); drX.moveTo(p.x,p.y); drX.restore();
+}
+
+function penMove(e) {
+  if (!A.isDrawing || A.tool==='text') return;
+  if (A.hasPen && e.pointerType==='touch') return;
+  e.preventDefault();
+
+  const p = pt(e);
+  A.pts.push(p);
+  if (A.pts.length < 2) return;
+
+  const prev = A.pts[A.pts.length-2];
+  const mx = (prev.x+p.x)/2, my = (prev.y+p.y)/2;
+
+  drX.save();
+  if (A.tool === 'eraser') {
+    drX.globalCompositeOperation = 'destination-out';
+    drX.beginPath();
+    drX.arc(p.x, p.y, A.size*DPR*1.5, 0, Math.PI*2);
+    drX.fillStyle = 'rgba(0,0,0,1)';
+    drX.fill();
+  } else {
+    applyCtx(p.p);
+    drX.beginPath();
+    drX.moveTo(prev.x, prev.y);
+    drX.quadraticCurveTo(prev.x, prev.y, mx, my);
+    drX.stroke();
+  }
+  drX.restore();
+}
+
+function penUp() {
+  if (!A.isDrawing) return;
+  A.isDrawing = false;
+  A.pts = [];
+  A.redo = [];
+}
+
+function applyCtx(pressure) {
+  const s = A.size * DPR;
+  drX.globalCompositeOperation = 'source-over';
+  drX.lineCap = 'round';
+  drX.lineJoin = 'round';
+
+  switch(A.tool) {
+    case 'pencil':
+      drX.strokeStyle = rgba(A.color, A.opacity*(0.35+pressure*0.55));
+      drX.lineWidth   = s * (0.6+pressure*0.6);
+      break;
+    case 'pen':
+      drX.strokeStyle = rgba(A.color, A.opacity);
+      drX.lineWidth   = s * (0.5+pressure*0.9);
+      break;
+    case 'marker':
+      drX.strokeStyle = rgba(A.color, A.opacity*0.38);
+      drX.lineWidth   = s * 3.5;
+      drX.lineCap     = 'square';
+      break;
+  }
+}
+
+function rgba(hex,a) {
+  const r=parseInt(hex.slice(1,3),16),
+        g=parseInt(hex.slice(3,5),16),
+        b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${Math.max(0,Math.min(1,a))})`;
+}
+
+/* ════════════════════════════════════════════
+   POINTER EVENTS
+════════════════════════════════════════════ */
+drC.addEventListener('pointerdown',  penDown,  {passive:false});
+drC.addEventListener('pointermove',  penMove,  {passive:false});
+drC.addEventListener('pointerup',    penUp);
+drC.addEventListener('pointercancel',penUp);
+drC.addEventListener('pointerleave', penUp);
+
+drC.addEventListener('click', e => {
+  if (A.tool !== 'text') return;
+  const p = pt(e);
+  showTxtBox(p.x, p.y);
+});
+
+/* ════════════════════════════════════════════
+   TEXT MODE
+════════════════════════════════════════════ */
+function showTxtBox(x, y) {
+  A.txtPos = {x, y};
+  txB.style.left = (x/DPR)+'px';
+  txB.style.top  = (y/DPR)+'px';
+  txB.style.fontSize = Math.max(16, A.size*4)+'px';
+  txB.style.color = A.color;
+  txB.innerHTML = '';
+  txB.style.display = 'block';
+  txB.focus();
+}
+
+txB.addEventListener('keydown', e => {
+  if (e.key === 'Escape') commitTxtBox();
+});
+
+function commitTxtBox() {
+  const text = (txB.innerText || '').trim();
+  txB.style.display = 'none';
+  txB.innerHTML = '';
+  if (!text) return;
+  // Show editable confirm overlay
+  document.getElementById('tc-box').value = text;
+  document.getElementById('txt-confirm').classList.add('show');
+}
+
+function commitTCBox() {
+  const text = document.getElementById('tc-box').value.trim();
+  document.getElementById('txt-confirm').classList.remove('show');
+  if (!text) return;
+  pushHist();
+  placeText(text, A.txtPos.x, A.txtPos.y);
+}
+
+function placeText(text, x, y) {
+  const fs = Math.max(18*DPR, A.size*4*DPR);
+  drX.save();
+  drX.globalCompositeOperation = 'source-over';
+  drX.fillStyle = A.color;
+  drX.font = `${fs}px "Noto Serif Devanagari","Noto Sans Devanagari",serif`;
+  drX.textBaseline = 'top';
+  const lh = fs * 1.35;
+  text.split('\n').forEach((ln,i)=> drX.fillText(ln, x, y+i*lh));
+  drX.restore();
+  A.redo = [];
+}
+
+/* ════════════════════════════════════════════
+   TOOL SELECTION
+════════════════════════════════════════════ */
+function setTool(t) {
+  if (A.tool==='text' && txB.style.display==='block') commitTxtBox();
+  A.tool = t;
+  A.size = TOOL_SZ[t];
+  document.getElementById('size-slider').value = A.size;
+  document.getElementById('sz-val').textContent = A.size;
+
+  document.querySelectorAll('.tb[id^="tb-"]').forEach(b=>b.classList.remove('on'));
+  const b = document.getElementById('tb-'+t);
+  if (b) b.classList.add('on');
+
+  drC.style.cursor = t==='eraser' ? 'cell' : (t==='text' ? 'text' : 'crosshair');
+}
+
+function onSizeChange(v) {
+  A.size = +v;
+  document.getElementById('sz-val').textContent = v;
+}
+
+/* ════════════════════════════════════════════
+   COLOR
+════════════════════════════════════════════ */
+function setColor(c) {
+  A.color = c;
+  document.getElementById('color-dot').style.background = c;
+  document.getElementById('cc-inp').value = c;
+  document.querySelectorAll('.cs').forEach(s=>
+    s.classList.toggle('on', s.dataset.c===c));
+}
+
+function initSwatches() {
+  const g = document.getElementById('swatch-grid');
+  SWATCHES.forEach(c=>{
+    const d = document.createElement('div');
+    d.className='cs'+(c===A.color?' on':'');
+    d.style.background=c;
+    d.style.border = c==='#ffffff'?'1.5px solid #ccc':'2.5px solid transparent';
+    d.dataset.c=c;
+    d.onclick=()=>{ setColor(c); };
+    g.appendChild(d);
+  });
+}
+
+/* ════════════════════════════════════════════
+   UNDO / REDO
+════════════════════════════════════════════ */
+function pushHist() {
+  A.history.push(drC.toDataURL('image/png'));
+  if (A.history.length > 60) A.history.shift();
+}
+
+function undo() {
+  if (!A.history.length) return;
+  A.redo.push(drC.toDataURL('image/png'));
+  restoreDR(A.history.pop());
+}
+
+function redo() {
+  if (!A.redo.length) return;
+  A.history.push(drC.toDataURL('image/png'));
+  restoreDR(A.redo.pop());
+}
+
+function restoreDR(url) {
+  const img=new Image();
+  img.onload=()=>{ drX.clearRect(0,0,drC.width,drC.height); drX.drawImage(img,0,0); };
+  img.src=url;
+}
+
+/* ════════════════════════════════════════════
+   PAGE MANAGEMENT
+════════════════════════════════════════════ */
+function saveCurPage() {
+  A.pages[A.cur] = drC.toDataURL('image/png');
+}
+
+function loadPage(idx) {
+  drX.clearRect(0,0,drC.width,drC.height);
+  const d = A.pages[idx];
+  if (d) {
+    const img=new Image();
+    img.onload=()=>drX.drawImage(img,0,0);
+    img.src=d;
+  }
+  drawBG(idx);
+}
+
+function changePage(delta) {
+  commitTxtBox();
+  const ni = A.cur+delta;
+  if (ni<0||ni>=A.pages.length) return;
+  saveCurPage();
+  A.cur=ni;
+  A.history=[]; A.redo=[];
+  loadPage(A.cur);
+  updPI();
+}
+
+function addPage() {
+  commitTxtBox();
+  saveCurPage();
+  A.pages.push(null);
+  A.bgPages.push(null);
+  A.cur=A.pages.length-1;
+  drX.clearRect(0,0,drC.width,drC.height);
+  A.history=[]; A.redo=[];
+  drawBG();
+  updPI();
+}
+
+function clearPage() {
+  if (!confirm('इस पृष्ठ की लिखाई मिटाएं?')) return;
+  pushHist();
+  drX.clearRect(0,0,drC.width,drC.height);
+  A.redo=[];
+}
+
+function newDoc() {
+  if (!confirm('नया दस्तावेज़? सभी परिवर्तन खो जाएंगे।')) return;
+  hideMo('mo-menu');
+  A.pages=[null]; A.bgPages=[null]; A.cur=0;
+  drX.clearRect(0,0,drC.width,drC.height);
+  A.history=[]; A.redo=[];
+  drawBG(); updPI();
+}
+
+function updPI() {
+  document.getElementById('pg-ind').textContent=`पृष्ठ ${A.cur+1}/${A.pages.length}`;
+}
+
+/* ════════════════════════════════════════════
+   PDF EXPORT  (canvas-as-image = no garbled Hindi)
+════════════════════════════════════════════ */
+async function exportPDF() {
+  showLoad('PDF बन रहा है...');
+  saveCurPage();
+  await document.fonts.ready;
+
+  const {jsPDF} = window.jspdf;
+  const sz = A.ps.size||'A4';
+  const doc = new jsPDF({orientation:'portrait',unit:'mm',format:sz.toLowerCase()});
+  const pw = doc.internal.pageSize.getWidth();
+  const ph = doc.internal.pageSize.getHeight();
+
+  for (let i=0; i<A.pages.length; i++) {
+    if (i>0) doc.addPage();
+
+    // Merge bg + drawing
+    const mc=document.createElement('canvas');
+    mc.width=bgC.width; mc.height=bgC.height;
+    const mx=mc.getContext('2d');
+
+    // Redraw bg for this page
+    const savedIdx=A.cur; A.cur=i; // temp switch
+    const tBG=A.bgPages[i], tPS=A.ps;
+    const bgImg = await new Promise(res=>{
+      const tmpC=document.createElement('canvas');
+      tmpC.width=bgC.width; tmpC.height=bgC.height;
+      const tx=tmpC.getContext('2d');
+      tx.fillStyle=A.ps.bgColor||'#fff'; tx.fillRect(0,0,tmpC.width,tmpC.height);
+      if (tBG) {
+        const img=new Image();
+        img.onload=()=>{ tx.drawImage(img,0,0,tmpC.width,tmpC.height); res(tmpC); };
+        img.src=tBG;
+      } else {
+        const sp=A.ps.spacing*DPR;
+        if (A.ps.type==='ruled'){
+          tx.strokeStyle=A.ps.marginColor||'#f4a0a0'; tx.lineWidth=1.5*DPR;
+          tx.beginPath(); tx.moveTo(58*DPR,0); tx.lineTo(58*DPR,tmpC.height); tx.stroke();
+          tx.strokeStyle=A.ps.lineColor||'#b8cce4'; tx.lineWidth=DPR;
+          for(let y=sp;y<tmpC.height;y+=sp){tx.beginPath();tx.moveTo(0,y);tx.lineTo(tmpC.width,y);tx.stroke();}
+        } else if (A.ps.type==='graph') {
+          tx.strokeStyle=A.ps.lineColor||'#b8cce4'; tx.lineWidth=DPR;
+          for(let x=sp;x<tmpC.width;x+=sp){tx.beginPath();tx.moveTo(x,0);tx.lineTo(x,tmpC.height);tx.stroke();}
+          for(let y=sp;y<tmpC.height;y+=sp){tx.beginPath();tx.moveTo(0,y);tx.lineTo(tmpC.width,y);tx.stroke();}
+        }
+        res(tmpC);
+      }
+    });
+    A.cur=savedIdx;
+
+    mx.drawImage(bgImg,0,0);
+
+    if (A.pages[i]) {
+      await new Promise(res=>{
+        const img=new Image();
+        img.onload=()=>{ mx.drawImage(img,0,0); res(); };
+        img.src=A.pages[i];
+      });
+    }
+
+    doc.addImage(mc.toDataURL('image/jpeg',0.93),'JPEG',0,0,pw,ph);
+  }
+
+  doc.save('हिंदी-नोट्स.pdf');
+  hideLoad();
+}
+
+/* ════════════════════════════════════════════
+   EXPORT IMAGE
+════════════════════════════════════════════ */
+function exportImg() {
+  saveCurPage();
+  const mc=document.createElement('canvas');
+  mc.width=bgC.width; mc.height=bgC.height;
+  const mx=mc.getContext('2d');
+  mx.drawImage(bgC,0,0);
+  const d=A.pages[A.cur];
+  const finish=()=>{
+    const a=document.createElement('a');
+    a.download=`hindi-p${A.cur+1}.png`;
+    a.href=mc.toDataURL('image/png');
+    a.click();
+  };
+  if (d) { const img=new Image(); img.onload=()=>{mx.drawImage(img,0,0);finish();}; img.src=d; }
+  else finish();
+}
+
+/* ════════════════════════════════════════════
+   SAVE / LOAD PROJECT
+════════════════════════════════════════════ */
+function saveProject() {
+  saveCurPage();
+  const proj={v:2,ps:A.ps,pages:A.pages,bgPages:A.bgPages,cur:A.cur};
+  const blob=new Blob([JSON.stringify(proj)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='hindi-notes.hnotes';
+  a.click();
+  hideMo('mo-menu');
+}
+
+function loadProject(inp) {
+  const f=inp.files[0]; if(!f) return;
+  showLoad('प्रोजेक्ट लोड हो रहा है...');
+  hideMo('mo-menu');
+  const r=new FileReader();
+  r.onload=e=>{
+    try {
+      const p=JSON.parse(e.target.result);
+      A.ps=p.ps||A.ps; A.pages=p.pages||[null];
+      A.bgPages=p.bgPages||A.pages.map(()=>null);
+      A.cur=p.cur||0;
+      A.history=[]; A.redo=[];
+      applyPStoUI(); initCanvas(); loadPage(A.cur); updPI();
+    } catch(ex){ alert('लोड में त्रुटि: '+ex.message); }
+    hideLoad();
+  };
+  r.readAsText(f);
+  inp.value='';
+}
+
+/* ════════════════════════════════════════════
+   LOAD PDF FOR EDITING
+════════════════════════════════════════════ */
+async function loadPDF(inp) {
+  const f=inp.files[0]; if(!f) return;
+  hideMo('mo-menu');
+  showLoad('PDF लोड हो रहा है...');
+
+  try {
+    if (!window.pdfjsLib) {
+      await loadSc('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc=
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    const ab=await f.arrayBuffer();
+    const pdf=await pdfjsLib.getDocument({data:ab}).promise;
+
+    saveCurPage();
+    A.pages=[]; A.bgPages=[];
+
+    for (let pn=1;pn<=pdf.numPages;pn++) {
+      const page=await pdf.getPage(pn);
+      const scale=bgC.width / page.getViewport({scale:1}).width;
+      const vp=page.getViewport({scale});
+      const tc=document.createElement('canvas');
+      tc.width=vp.width; tc.height=vp.height;
+      await page.render({canvasContext:tc.getContext('2d'),viewport:vp}).promise;
+      A.bgPages.push(tc.toDataURL('image/png'));
+      A.pages.push(null);
+    }
+
+    A.cur=0; A.history=[]; A.redo=[];
+    loadPage(0); updPI();
+  } catch(ex){ alert('PDF त्रुटि: '+ex.message); }
+
+  hideLoad();
+  inp.value='';
+}
+
+function loadSc(src) {
+  return new Promise((ok,err)=>{
+    const s=document.createElement('script');
+    s.src=src; s.onload=ok; s.onerror=err;
+    document.head.appendChild(s);
+  });
+}
+
+/* ════════════════════════════════════════════
+   VOICE INPUT
+════════════════════════════════════════════ */
+let SR = null;
+
+function openVoice() {
+  const Cls = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Cls) {
+    alert('आवाज़ पहचान Safari में उपलब्ध है।\nकृपया iPad पर Safari browser उपयोग करें।');
+    return;
+  }
+  A.voiceText = '';
+  document.getElementById('v-text').textContent='सुन रहे हैं...';
+  document.getElementById('mic-vis').classList.add('pulse');
+  showMo('mo-voice');
+
+  SR = new Cls();
+  SR.lang = 'hi-IN';
+  SR.continuous = true;
+  SR.interimResults = true;
+
+  SR.onresult = e => {
+    let fin='', inter='';
+    for (let i=e.resultIndex; i<e.results.length; i++) {
+      const t=e.results[i][0].transcript;
+      if(e.results[i].isFinal){fin+=t; A.voiceText+=t;}
+      else inter+=t;
+    }
+    document.getElementById('v-text').textContent = A.voiceText+inter || '...';
+  };
+  SR.onerror = e => {
+    if(e.error!=='no-speech')
+      document.getElementById('v-text').textContent='त्रुटि: '+e.error;
+  };
+  SR.start();
+}
+
+function stopVoice() {
+  if(SR){SR.stop();SR=null;}
+  document.getElementById('mic-vis').classList.remove('pulse');
+  A.voiceText='';
+  hideMo('mo-voice');
+}
+
+function confirmVoice() {
+  const text=(document.getElementById('v-text').textContent||'').trim();
+  if(SR){SR.stop();SR=null;}
+  document.getElementById('mic-vis').classList.remove('pulse');
+  hideMo('mo-voice');
+
+  if (text && text!=='सुन रहे हैं...' && text!=='यहाँ आपकी आवाज़ दिखाई देगी...') {
+    document.getElementById('tc-box').value = text;
+    // Default position: top-left drawing area
+    A.txtPos = {x:70*DPR, y:A.ps.spacing*2*DPR};
+    document.getElementById('txt-confirm').classList.add('show');
+  }
+  A.voiceText='';
+}
+
+/* ════════════════════════════════════════════
+   PAGE SETTINGS
+════════════════════════════════════════════ */
+function setPT(t) {
+  A.ps.type=t;
+  document.querySelectorAll('.pt').forEach(b=>b.classList.remove('on'));
+  document.getElementById('pt-'+t).classList.add('on');
+  document.getElementById('sp-row').style.display=(t==='plain')?'none':'flex';
+}
+
+function applyPS() {
+  const sp=+document.getElementById('inp-sp').value;
+  if (sp>=8 && sp<=120) A.ps.spacing=sp;
+  A.ps.lineColor=document.getElementById('inp-lc').value;
+  A.ps.bgColor=document.getElementById('inp-bg').value;
+  const newSz=document.getElementById('inp-pgsz').value;
+  if(newSz!==A.ps.size){
+    A.ps.size=newSz;
+    saveCurPage();
+    initCanvas();
+    loadPage(A.cur);
+  } else {
+    drawBG();
+  }
+  hideMo('mo-page');
+}
+
+function applyPStoUI() {
+  document.getElementById('inp-sp').value=A.ps.spacing;
+  document.getElementById('inp-lc').value=A.ps.lineColor;
+  document.getElementById('inp-bg').value=A.ps.bgColor||'#ffffff';
+  document.getElementById('inp-pgsz').value=A.ps.size;
+  setPT(A.ps.type);
+}
+
+/* ════════════════════════════════════════════
+   PRESETS
+════════════════════════════════════════════ */
+function savePreset() {
+  const name=prompt('प्रीसेट का नाम:','परीक्षा पत्र');
+  if(!name) return;
+  A.presets.push({id:Date.now(),name,ps:{...A.ps}});
+  localStorage.setItem('ps-presets',JSON.stringify(A.presets));
+  renderPresets();
+}
+
+function renderPresets() {
+  const el=document.getElementById('preset-list');
+  el.innerHTML='';
+  A.presets.forEach(p=>{
+    const d=document.createElement('div');
+    d.className='pchip';
+    d.innerHTML=`<span onclick="loadPreset(${p.id})">${p.name}</span>
+                 <span class="dx" onclick="delPreset(${p.id})">✕</span>`;
+    el.appendChild(d);
+  });
+}
+
+function loadPreset(id) {
+  const p=A.presets.find(x=>x.id===id);
+  if(!p) return;
+  A.ps={...p.ps};
+  applyPStoUI();
+  drawBG();
+}
+
+function delPreset(id) {
+  A.presets=A.presets.filter(x=>x.id!==id);
+  localStorage.setItem('ps-presets',JSON.stringify(A.presets));
+  renderPresets();
+}
+
+/* ════════════════════════════════════════════
+   MODAL HELPERS
+════════════════════════════════════════════ */
+function showMo(id){document.getElementById(id).classList.add('show')}
+function hideMo(id){document.getElementById(id).classList.remove('show')}
+function triggerLoad(id){hideMo('mo-menu');setTimeout(()=>document.getElementById(id).click(),100)}
+
+/* ════════════════════════════════════════════
+   LOADING
+════════════════════════════════════════════ */
+function showLoad(t){document.getElementById('load-txt').textContent=t||'...';document.getElementById('loading').classList.add('show')}
+function hideLoad(){document.getElementById('loading').classList.remove('show')}
+
+/* ════════════════════════════════════════════
+   KEYBOARD SHORTCUTS (desktop testing)
+════════════════════════════════════════════ */
+document.addEventListener('keydown',e=>{
+  if(txB.style.display==='block') return;
+  const mc=e.metaKey||e.ctrlKey;
+  if(mc){
+    if(e.key==='z'){e.preventDefault(); e.shiftKey?redo():undo();}
+    if(e.key==='s'){e.preventDefault(); saveProject();}
+    if(e.key==='p'){e.preventDefault(); exportPDF();}
+  }
+  if(!mc){
+    if(e.key==='e') setTool('eraser');
+    if(e.key==='p') setTool('pen');
+    if(e.key==='c') setTool('pencil');
+    if(e.key==='m') setTool('marker');
+    if(e.key==='t') setTool('text');
+  }
+});
+
+/* ════════════════════════════════════════════
+   SERVICE WORKER
+════════════════════════════════════════════ */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+
+/* ════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════ */
+(function init(){
+  A.pages  = [null];
+  A.bgPages= [null];
+
+  initCanvas();
+  initSwatches();
+  setColor('#000000');
+  setTool('pen');
+  renderPresets();
+  applyPStoUI();
+  updPI();
+
+  // Preload pdf.js quietly
+  loadSc('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js')
+    .then(()=>{ pdfjsLib.GlobalWorkerOptions.workerSrc=
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; })
+    .catch(()=>{});
+})();
+</script>
+</body>
+</html>

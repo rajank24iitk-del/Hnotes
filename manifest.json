@@ -1,0 +1,21 @@
+{
+  "name": "हिंदी नोट्स",
+  "short_name": "हिंदी नोट्स",
+  "description": "Apple Pencil से हिंदी में परीक्षा पत्र और होमवर्क बनाएं",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#007AFF",
+  "lang": "hi",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "categories": ["education", "productivity"]
+}

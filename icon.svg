@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="#007AFF"/>
+  <!-- Hindi letter ह (ha) in white -->
+  <text x="256" y="370" font-family="'Noto Sans Devanagari', 'Noto Sans', sans-serif"
+        font-size="300" font-weight="700" fill="white"
+        text-anchor="middle" dominant-baseline="auto">ह</text>
+  <!-- Small pencil decoration -->
+  <rect x="60" y="430" width="120" height="12" rx="6" fill="rgba(255,255,255,0.6)"/>
+  <rect x="330" y="430" width="120" height="12" rx="6" fill="rgba(255,255,255,0.6)"/>
+</svg>
